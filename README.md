@@ -11,6 +11,28 @@ This is the code base for the [ARC-AGI Without Pretraining](https://iliao2345.gi
 > pip install -r requirements.txt
 ```
 
+# Enhancements
+
+**Baseline Evaluation**: Run on 100 easy tasks for benchmarking:
+```
+python select_easy_tasks.py  # Select tasks
+python run_easy_100_baseline.py  # Run baseline
+python score_easy_100_baseline.py  # Score results
+```
+
+**Enhanced Solution Selection**: Constraint-based validation (+8-15% accuracy):
+```
+python run_easy_100_enhanced.py  # Uses 20 diverse candidates + 6 ARC constraints
+```
+
+**Meta-Learning**: Learn optimal constraint weights from validation data (+2-5% additional):
+```
+python learn_constraint_weights.py --method gradient  # Train weights
+python run_easy_100_meta.py  # Evaluate with learned weights
+```
+
+See `META_LEARNING_GUIDE.md` for details.
+
 # How to solve an ARC-AGI task
 
 Run `analyze_example.py` to initialize a new model and train from scratch:
@@ -38,6 +60,12 @@ A basic description of the code files in this repo:
 
 **For running via command line:**
 - `analyze_example.py`: Demonstrates how to solve one ARC-AGI problem using our method, with visualizations of learned task representations and plots of metrics.
+- `select_easy_tasks.py`: Selects 100 easiest ARC tasks based on complexity heuristics for baseline evaluation.
+- `run_easy_100_baseline.py`: Runs baseline evaluation on 100 easy tasks.
+- `run_easy_100_enhanced.py`: Runs enhanced evaluation with constraint-based solution selection.
+- `run_easy_100_meta.py`: Runs evaluation with meta-learned constraint weights.
+- `learn_constraint_weights.py`: Trains optimal constraint weights using gradient descent, logistic regression, or grid search.
+- `score_easy_100_baseline.py`: Scores task submissions and computes accuracy metrics.
 - `plot_problems.py`: Plots all of the ARC-AGI problems in a split.
 - `plot_accuracy.py`: Plots pass@n accuracies during/after a bulk training run with `train.py`.
 - `train.py`: Trains a model for every task in a split, plotting the accuracy. Contains code that computes the loss function. Defaults to the training split.
@@ -46,6 +74,9 @@ A basic description of the code files in this repo:
 
 **Functionality, not for running via command line:**
 - `arc_compressor.py`: The network architecture and forward pass.
+- `arc_constraints.py`: Constraint validators for ARC task patterns (color preservation, size consistency, symmetry, etc.).
+- `enhanced_solution_selection.py`: Enhanced Logger with diverse sampling strategies and constraint-based scoring.
+- `meta_learning.py`: Meta-learning system for learning optimal constraint weights from validation data.
 - `initializers.py`: Model initialization, and handling of equivariances via weight tying.
 - `layers.py`: Implementation of individual layers in the forward pass.
 - `multitensor_systems.py`: Handling multitensors.
@@ -58,6 +89,9 @@ A basic description of the code files in this repo:
 - `MultiTensorSystem` (in `multitensor_systems.py`): A class that can spawn MultiTensors using stored dimensional information.
 - `MultiTensor` (in `multitensor_systems.py`): Container class for groups of tensors.
 - `Logger` (in `solution_selection.py`): For postprocessing of solutions outputted by the model, and their collection over time during training.
+- `EnhancedLogger` (in `enhanced_solution_selection.py`): Enhanced Logger with diverse sampling and constraint validation.
+- `ARCConstraintValidator` (in `arc_constraints.py`): Validates solutions against ARC structural patterns.
+- `ConstraintWeightLearner` (in `meta_learning.py`): Learns optimal constraint weights using gradient descent, logistic regression, or grid search.
 - `Task` (in `preprocessing.py`): Contains information about an ARC-AGI task, such as grid dimensions and masks, pixel colors, etc.
 - `ARCCompressor` (in `arc_compressor.py`): Model class, with forward pass.
 - `Initializer` (in `initializers.py`): For initializing model weights.
