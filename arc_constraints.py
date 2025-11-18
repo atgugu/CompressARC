@@ -20,12 +20,15 @@ class ARCConstraintValidator:
     Validates and scores solutions based on ARC task constraints.
     """
 
-    def __init__(self, task):
+    def __init__(self, task, learned_weights: Optional[Dict[str, float]] = None):
         """
         Initialize validator with training examples to infer constraints.
 
         Args:
             task: preprocessing.Task object containing training examples
+            learned_weights: Optional dictionary of learned constraint weights.
+                           If None, uses fixed empirical confidences.
+                           Keys: constraint names, Values: weight values
         """
         self.task = task
         self.train_input_grids = []
@@ -47,6 +50,21 @@ class ARCConstraintValidator:
 
         # Infer meta-constraints from training examples
         self.meta_constraints = self._infer_meta_constraints()
+
+        # Set constraint weights (learned or fixed)
+        self.use_learned_weights = learned_weights is not None
+        if learned_weights is not None:
+            self.constraint_weights = learned_weights
+        else:
+            # Default fixed weights based on empirical frequencies
+            self.constraint_weights = {
+                'color_preservation': 0.87,
+                'non_trivial': 0.70,
+                'size_consistency': 0.80,
+                'background_consistency': 0.60,
+                'color_count': 0.60,
+                'symmetry_preservation': 0.40
+            }
 
     def _infer_meta_constraints(self) -> Dict:
         """
@@ -254,22 +272,27 @@ class ARCConstraintValidator:
         output_remapped = np.array([[color_mapping.get(int(val), int(val)) for val in row]
                                      for row in output_array], dtype=int)
 
-        # Apply all constraints
-        constraints = [
-            self.validate_color_preservation(input_remapped, output_remapped),
-            self.validate_non_trivial(output_remapped),
-            self.validate_size_consistency(input_remapped, output_remapped),
-            self.validate_background_consistency(input_remapped, output_remapped),
-            self.validate_color_count(input_remapped, output_remapped),
-            self.validate_symmetry_preservation(input_remapped, output_remapped),
-        ]
+        # Apply all constraints with names
+        constraint_results = {
+            'color_preservation': self.validate_color_preservation(input_remapped, output_remapped),
+            'non_trivial': self.validate_non_trivial(output_remapped),
+            'size_consistency': self.validate_size_consistency(input_remapped, output_remapped),
+            'background_consistency': self.validate_background_consistency(input_remapped, output_remapped),
+            'color_count': self.validate_color_count(input_remapped, output_remapped),
+            'symmetry_preservation': self.validate_symmetry_preservation(input_remapped, output_remapped),
+        }
 
-        # Compute weighted score
+        # Compute weighted score using learned or fixed weights
         total_score = 0.0
         total_weight = 0.0
 
-        for is_valid, confidence in constraints:
-            weight = confidence
+        for constraint_name, (is_valid, confidence) in constraint_results.items():
+            # Use learned weight if available, otherwise use confidence from validator
+            if self.use_learned_weights:
+                weight = self.constraint_weights.get(constraint_name, confidence)
+            else:
+                weight = confidence
+
             score = 1.0 if is_valid else 0.0
             total_score += score * weight
             total_weight += weight

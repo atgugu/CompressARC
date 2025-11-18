@@ -81,10 +81,22 @@ def score_submission(submission_file_name, solutions_file_name, include_task_sco
 
 
 if __name__ == '__main__':
-    submission_file_name = "./submission_easy_100.json"
-    solutions_file_name = "dataset/arc-agi_training_solutions.json"
+    import argparse
 
-    print("Scoring baseline results on 100 easy ARC tasks...")
+    parser = argparse.ArgumentParser(description='Score ARC task submissions')
+    parser.add_argument('--submission', type=str, default='./submission_easy_100.json',
+                       help='Submission file to score')
+    parser.add_argument('--solutions', type=str, default='dataset/arc-agi_training_solutions.json',
+                       help='Ground truth solutions file')
+    parser.add_argument('--output', type=str, default=None,
+                       help='Output JSON file for detailed results (optional)')
+
+    args = parser.parse_args()
+
+    submission_file_name = args.submission
+    solutions_file_name = args.solutions
+
+    print("Scoring ARC task results...")
     print(f"Submission file: {submission_file_name}")
     print(f"Solutions file: {solutions_file_name}")
     print()
@@ -92,7 +104,7 @@ if __name__ == '__main__':
     score = score_submission(submission_file_name, solutions_file_name, include_task_scores=True)
 
     print("=" * 60)
-    print("BASELINE RESULTS ON 100 EASY ARC TASKS")
+    print("ARC TASK EVALUATION RESULTS")
     print("=" * 60)
     print(f"Total Score: {score['total_score']:.2f}")
     print(f"Total Tasks: {score['total_tasks_scored']}")
@@ -107,7 +119,14 @@ if __name__ == '__main__':
         print(f"  {task_id}: {task_score:.2f}")
 
     # Save detailed results
-    with open('baseline_results_easy_100.json', 'w') as f:
+    if args.output:
+        output_file = args.output
+    else:
+        # Auto-generate output filename based on submission
+        base_name = submission_file_name.replace('.json', '_results.json')
+        output_file = base_name
+
+    with open(output_file, 'w') as f:
         json.dump(score, f, indent=2)
 
-    print(f"\nDetailed results saved to: baseline_results_easy_100.json")
+    print(f"\nDetailed results saved to: {output_file}")

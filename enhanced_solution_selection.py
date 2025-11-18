@@ -28,7 +28,7 @@ class EnhancedLogger:
     """
     ema_decay = 0.97
 
-    def __init__(self, task, use_constraints=True, n_candidates=20):
+    def __init__(self, task, use_constraints=True, n_candidates=20, learned_weights=None):
         """
         Initialize enhanced logger.
 
@@ -36,15 +36,17 @@ class EnhancedLogger:
             task: preprocessing.Task object
             use_constraints: Whether to use constraint-based scoring
             n_candidates: Number of diverse candidates to generate
+            learned_weights: Optional dict of learned constraint weights.
+                           If provided, uses these instead of fixed weights.
         """
         self.task = task
         self.use_constraints = use_constraints
         self.n_candidates = n_candidates
 
-        # Initialize constraint validator
+        # Initialize constraint validator with learned weights
         if use_constraints:
             try:
-                self.validator = arc_constraints.ARCConstraintValidator(task)
+                self.validator = arc_constraints.ARCConstraintValidator(task, learned_weights=learned_weights)
             except Exception as e:
                 print(f"Warning: Could not initialize constraint validator: {e}")
                 self.validator = None
